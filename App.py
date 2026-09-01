@@ -80,14 +80,16 @@ if uploaded_file is not None:
                 value=f"{score_percentage}%"
             )
             
-            # Display Feature Interactions
+                        # --- FIXED AND STABLE METRICS PLACEMENT ---
             st.write("#### Engineered Model Features")
-            feat_cols = st.columns(3)
+            feat_cols = st.columns(3) # This initializes a list array of 3 columns
             eng_feats = risk_payload["engineered_features"]
             
-            feat_cols.metric("Total Active Hours", f"{eng_feats['total_active_hours']} hrs")
-            feat_cols.metric("Dopamine/Utility Ratio", f"{eng_feats['dopamine_utility_ratio']}x")
-            feat_cols.metric("Hourly Unlock Intensity", f"{eng_feats['unlocks_per_hour']} / hr")
+            # Target individual items inside the columns array using sequential indices
+            feat_cols[0].metric("Total Active Hours", f"{eng_feats['total_active_hours']} hrs")
+            feat_cols[1].metric("Dopamine/Utility Ratio", f"{eng_feats['dopamine_utility_ratio']}x")
+            feat_cols[2].metric("Hourly Unlock Intensity", f"{eng_feats['unlocks_per_hour']} / hr")
+
             
             st.info(f"💡 **Actionable Behavioral Guidance:** {risk_payload['actionable_advice']}")
             
