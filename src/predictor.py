@@ -1,5 +1,6 @@
 # src/predictor.py
 import numpy as np
+import pandas as pd
 
 def calculate_addiction_risk(metrics):
     """
@@ -12,52 +13,42 @@ def calculate_addiction_risk(metrics):
     entertainment_time = float(metrics.get("entertainment_minutes", 0) or 0)
     productivity_time = float(metrics.get("productivity_minutes", 0) or 0)
     
-    # Handle unlocks safely (convert to float if present, else fallback to average baseline)
+    # Calculate lingering 'Other' bucket categories dynamically
+    accounted_time = social_time + entertainment_time + productivity_time
+    other_time = max(0.0, total_time - accounted_time)
+    
     unlocks = metrics.get("total_unlocks")
     unlocks = float(unlocks) if unlocks is not None else 50.0 
 
-    # 2. Advanced Feature Engineering (Replicating Kaggle tabular interaction terms)
-    # Tree models love non-linear interaction ratios that highlight mathematical boundaries
+    # 2. Advanced Feature Engineering
     total_screen_hours = total_time / 60.0
-    
-    # Target-Spline Artifact: Ratio of dopaminergic apps (social + entertainment) vs baseline utility
     dopamine_load = social_time + entertainment_time
-    utility_offset = productivity_time + 1.0 # smooth to prevent division by zero
+    utility_offset = productivity_time + 1.0 
     load_ratio = dopamine_load / utility_offset
-    
-    # Interaction: Frequency intensity (Unlocks per active screen hour)
     unlock_intensity = unlocks / (total_screen_hours + 0.1)
 
-    # 3. Simulated Ensemble Leaf Scoring (Boundary Weight Matrix)
-    # Emulating how tree depths split continuous values in the smartphone dataset
-    base_score = 0.35  # Baseline normal population risk index
-    
-    # Split 1: Total Screen Time thresholds
-    if total_time > 360:     # > 6 Hours
+    # 3. Simulated Ensemble Leaf Scoring
+    base_score = 0.35  
+    if total_time > 360:     
         base_score += 0.25
-    elif total_time > 180:   # > 3 Hours
+    elif total_time > 180:   
         base_score += 0.10
         
-    # Split 2: High Dopamine Load Ratio threshold
     if load_ratio > 3.0:
         base_score += 0.20
     elif load_ratio > 1.5:
         base_score += 0.08
         
-    # Split 3: High Unlock Frequency / Compulsive checking threshold
-    if unlock_intensity > 15: # More than 15 checks per hour
+    if unlock_intensity > 15: 
         base_score += 0.15
     elif unlock_intensity > 8:
         base_score += 0.05
         
-    # Split 4: Productivity Cushion mitigation rule
     if productivity_time > 90 and total_time < 300:
         base_score -= 0.08
 
-    # Bound the final probability score between 0.0 and 1.0 (AUC tracking alignment)
     addiction_probability = float(np.clip(base_score, 0.0, 1.0))
 
-    # 4. Map boundaries to categorical outputs
     if addiction_probability >= 0.75:
         risk_category = "Critical / High Additive Load"
         color = "error"
@@ -71,7 +62,41 @@ def calculate_addiction_risk(metrics):
         color = "success"
         advice = "Excellent baseline regulation! Your smartphone habits show stable contextual boundary splits."
 
-    # Return engineered analytical payload
+    # 4. Generate structured dataset for Plotly charting engines
+    chart_df = pd.DataFrame({
+        "Category": ["Social Networking", "Entertainment / Media", "Productivity", "Other Utility"],
+        "Minutes Spent": [social_time, entertainment_time, productivity_time, other_time]
+    })
+
+    # 5. Compile a clean text summary report artifact
+    report_text = f"""==================================================
+FOCUS_SENSE AI: BEHAVIORAL SCREEN-TIME AUDIT REPORT
+==================================================
+Diagnostic Status: {risk_category}
+Addiction Probability Rating: {int(addiction_probability * 100)}%
+
+METRICS SUMMARY SUMMARY PROFILE:
+-------------------------------
+- Total Logged Screen Duration: {total_time} mins ({round(total_screen_hours, 1)} hrs)
+- Social Networking Time      : {social_time} mins
+- Entertainment / Media Time  : {entertainment_time} mins
+- Core Focused Productivity   : {productivity_time} mins
+- Estimated Device Unlocks    : {unlocks} checks
+
+ENGINEERED INSIGHT RATIOS:
+-------------------------
+- Dopamine-to-Utility Ratio   : {round(load_ratio, 2)}x
+- Hourly Checking Intensity   : {round(unlock_intensity, 1)} unlocks/hr
+
+RECOMMENDED ACTION PLAN:
+-----------------------
+{advice}
+
+--------------------------------------------------
+Generated via FocusSense AI Predictive Engine Cloud Cluster.
+==================================================
+"""
+
     return {
         "risk_probability": round(addiction_probability, 4),
         "risk_category": risk_category,
@@ -81,5 +106,7 @@ def calculate_addiction_risk(metrics):
             "dopamine_utility_ratio": round(load_ratio, 2),
             "unlocks_per_hour": round(unlock_intensity, 1),
             "total_active_hours": round(total_screen_hours, 1)
-        }
+        },
+        "chart_data": chart_df,
+        "downloadable_report": report_text
     }
