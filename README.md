@@ -1,18 +1,11 @@
 # 📱 FocusSense AI: Multimodal Screen-Time Auditor & Predictive Risk Engine
 
-[![Streamlit App](https://streamlit.io)](https://streamlit.app)
-[![GitHub License](https://shields.io)](LICENSE)
-[![Python Version](https://shields.io)](https://python.org)
+**[🚀 Live Streamlit Web App](https://focus-sense-ai-h6jpqu4bfwref3mljuwngk.streamlit.app/)** | **[💻 GitHub Repository](https://github.com/Ashish041991/Focus-Sense-AI/)** | **🐍 Python 3.10+**
+
 
 FocusSense AI is an end-to-end, production-grade multimodal web application designed to parse raw smartphone wellness screenshots, engineer behavioral usage indicators, and compute habit-addiction risk categories. 
 
 The application utilizes zero-cost cloud processing pipelines to evaluate complex mobile interface matrices and display interactive allocation metrics without drawing heavy local hardware computational resource footprints.
-
----
-
-## 🚀 Live Production URL
-Interact with the live cloud system framework container directly here:  
-👉 **[https://focus-sense-ai-h6jpqu4bfwref3mljuwngk.streamlit.app/]**
 
 ---
 
