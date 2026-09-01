@@ -91,7 +91,7 @@ if uploaded_file is not None:
             
             st.info(f"💡 **Actionable Behavioral Guidance:** {risk_payload['actionable_advice']}")
             
-            # --- NEW INTERACTIVE VISUALIZATION LAYER ---
+                        # --- UPDATED STABLE VISUALIZATION LAYER ---
             st.write("#### 📈 Resource Allocation Breakdown")
             fig = px.bar(
                 risk_payload["chart_data"],
@@ -99,11 +99,16 @@ if uploaded_file is not None:
                 y="Category",
                 orientation="h",
                 color="Category",
-                text="Minutes Spent",
                 color_discrete_sequence=px.colors.qualitative.Pastel
             )
-            fig.update_layout(showlegend=False, height=280, margin=dict(l=20, r=20, t=20, b=20))
+            # Remove direct text overlay to prevent string errors on extreme values
+            fig.update_layout(
+                showlegend=False, 
+                height=280, 
+                margin=dict(l=20, r=20, t=20, b=20)
+            )
             st.plotly_chart(fig, use_container_width=True)
+
             
             # --- NEW DOWNLOADABLE EXECUTIVE SUMMARY REPORT ---
             st.write("#### 💾 Export Diagnostic Logs")
@@ -113,6 +118,8 @@ if uploaded_file is not None:
                 file_name="FocusSense_Addiction_Audit_Report.txt",
                 mime="text/plain"
             )
-            
+            # --- NEW INTERACTIVE REPORT VIEWER ---
+            with st.expander("📄 View Full Executive Summary Report"):
+                st.text(risk_payload["downloadable_report"])
             with st.expander("View Raw Vision JSON Schema Payload"):
                 st.json(extracted_metrics)
