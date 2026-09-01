@@ -3,6 +3,7 @@ import json
 import streamlit as st  # Import streamlit to access secrets
 from google import genai
 from PIL import Image
+import time
 
 def extract_screen_time_metrics(image_path_or_obj):
     """
@@ -43,12 +44,30 @@ def extract_screen_time_metrics(image_path_or_obj):
     Output ONLY valid, parseable JSON code. Do not include markdown wraps like ```json or any trailing text notes.
     """
 
-    try:
-        # Utilizing gemini-2.5-flash for balanced multimodal speed and parsing efficiency
-        response = client.models.generate_content(
-            model='gemini-3.6-flash',
-            contents=[img, prompt]
-        )
+     # Define retry parameters
+    max_retries = 3
+    delay = 2  # Seconds to wait before trying again
+
+    for attempt in range(max_retries):
+        try:
+            # Attempt to reach the active production endpoint
+            response = client.models.generate_content(
+                model='gemini-3.6-flash',
+                contents=[img, prompt]
+            )
+            clean_text = response.text.strip().replace("```json", "").replace("```", "")
+            return json.loads(clean_text)
+            
+        except Exception as e:
+            # If it's a 503 error and we have retries left, wait and try again
+            if attempt < max_retries - 1:
+                time.sleep(delay)
+                delay *= 2  # Exponentially increase wait time (2s, 4s...)
+                continue
+            else:
+                # If all retries fail, return a clean message to the user
+                return {"error": f"The API is currently experiencing a high volume of traffic. Please wait a moment and click upload again."}
+
         
         # Clean the string if the model returns lingering code-blocks despite instructions
         clean_text = response.text.strip().replace("```json", "").replace("```", "")
