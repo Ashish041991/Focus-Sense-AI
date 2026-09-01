@@ -1,7 +1,8 @@
-# app.py
+# App.py
 import streamlit as st
 from PIL import Image
 import os
+import plotly.express as px
 from src.vision_parser import extract_screen_time_metrics
 from src.predictor import calculate_addiction_risk
 
@@ -26,11 +27,10 @@ with st.sidebar:
         """
         - **Vision Layer:** Gemini Flash API
         - **Predictive Engine:** LightGBM-Style Split Simulation
-        - **Execution Type:** Serverless Cloud Compute
+        - **Visualizations:** Plotly Dynamic Canvas
         """
     )
     
-        # Update this block in app.py inside the "with st.sidebar:" block
     if "GEMINI_API_KEY" in st.secrets:
         st.success("API Status: Connected to Google Cloud Engine")
     else:
@@ -60,13 +60,12 @@ if uploaded_file is not None:
         if "error" in extracted_metrics:
             st.error(extracted_metrics["error"])
         else:
-            # Triggering the Predictive Layer
+            # Triggering the updated Predictive Layer
             risk_payload = calculate_addiction_risk(extracted_metrics)
             
             # --- RENDER MAIN WEB OUTPUTS ---
             st.write("### 📊 Diagnostic Profile Output")
             
-            # 1. Main Risk Metric Presentation
             score_percentage = int(risk_payload["risk_probability"] * 100)
             
             if risk_payload["color_theme"] == "error":
@@ -78,22 +77,42 @@ if uploaded_file is not None:
                 
             st.metric(
                 label="Calculated Smartphone Addiction Probability Index", 
-                value=f"{score_percentage}%",
-                delta="Tabular Boundary Estimation"
+                value=f"{score_percentage}%"
             )
             
-            # 2. Display Feature Interactions
+            # Display Feature Interactions
             st.write("#### Engineered Model Features")
             feat_cols = st.columns(3)
             eng_feats = risk_payload["engineered_features"]
             
-            feat_cols[0].metric("Total Active Hours", f"{eng_feats['total_active_hours']} hrs")
-            feat_cols[1].metric("Dopamine/Utility Ratio", f"{eng_feats['dopamine_utility_ratio']}x")
-            feat_cols[2].metric("Hourly Unlock Intensity", f"{eng_feats['unlocks_per_hour']} / hr")
+            feat_cols.metric("Total Active Hours", f"{eng_feats['total_active_hours']} hrs")
+            feat_cols.metric("Dopamine/Utility Ratio", f"{eng_feats['dopamine_utility_ratio']}x")
+            feat_cols.metric("Hourly Unlock Intensity", f"{eng_feats['unlocks_per_hour']} / hr")
             
-            # 3. Clinical Recommendation Box
             st.info(f"💡 **Actionable Behavioral Guidance:** {risk_payload['actionable_advice']}")
             
-            # Collapsible raw extraction block for verification
+            # --- NEW INTERACTIVE VISUALIZATION LAYER ---
+            st.write("#### 📈 Resource Allocation Breakdown")
+            fig = px.bar(
+                risk_payload["chart_data"],
+                x="Minutes Spent",
+                y="Category",
+                orientation="h",
+                color="Category",
+                text="Minutes Spent",
+                color_discrete_sequence=px.colors.qualitative.Pastel
+            )
+            fig.update_layout(showlegend=False, height=280, margin=dict(l=20, r=20, t=20, b=20))
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # --- NEW DOWNLOADABLE EXECUTIVE SUMMARY REPORT ---
+            st.write("#### 💾 Export Diagnostic Logs")
+            st.download_button(
+                label="📥 Download Comprehensive Audit Summary (.txt)",
+                data=risk_payload["downloadable_report"],
+                file_name="FocusSense_Addiction_Audit_Report.txt",
+                mime="text/plain"
+            )
+            
             with st.expander("View Raw Vision JSON Schema Payload"):
                 st.json(extracted_metrics)
