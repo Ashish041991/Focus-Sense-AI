@@ -1,34 +1,29 @@
 # src/vision_parser.py
+import os
 import json
-import streamlit as st  # Import streamlit to access secrets
+import time  # Kept clearly at the global namespace level
+import streamlit as st
 from google import genai
 from PIL import Image
-import time
 
 def extract_screen_time_metrics(image_path_or_obj):
     """
     Passes a smartphone screen-time screenshot to Gemini Flash via API 
     and returns a structured Python dictionary of metrics.
     """
-    # Streamlit automatically hooks up its secrets file securely right here
+    # Streamlit securely handles environmental configurations here
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"]
     else:
         raise ValueError("System Error: GEMINI_API_KEY is missing from .streamlit/secrets.toml")
         
-    # Pass the secret key directly into the client initialization
     client = genai.Client(api_key=api_key)
     
-    # ... Rest of your existing function code remains exactly the same!
-
-    
-    # Ensure image is opened correctly via PIL
     if isinstance(image_path_or_obj, str):
         img = Image.open(image_path_or_obj)
     else:
         img = image_path_or_obj
 
-    # Engineering a structured schema template for strict JSON outputs
     prompt = """
     You are an advanced data extraction agent specialized in analyzing mobile interface screenshots.
     Analyze this smartphone Screen Time / Digital Wellbeing dashboard image carefully.
@@ -44,13 +39,12 @@ def extract_screen_time_metrics(image_path_or_obj):
     Output ONLY valid, parseable JSON code. Do not include markdown wraps like ```json or any trailing text notes.
     """
 
-     # Define retry parameters
+    # Retries handling parameters to circumvent 503 traffic throttling 
     max_retries = 3
-    delay = 2  # Seconds to wait before trying again
+    delay = 2  
 
     for attempt in range(max_retries):
         try:
-            # Attempt to reach the active production endpoint
             response = client.models.generate_content(
                 model='gemini-3.6-flash',
                 contents=[img, prompt]
@@ -59,20 +53,9 @@ def extract_screen_time_metrics(image_path_or_obj):
             return json.loads(clean_text)
             
         except Exception as e:
-            # If it's a 503 error and we have retries left, wait and try again
             if attempt < max_retries - 1:
                 time.sleep(delay)
-                delay *= 2  # Exponentially increase wait time (2s, 4s...)
+                delay *= 2  # Exponential backoff increments
                 continue
             else:
-                # If all retries fail, return a clean message to the user
-                return {"error": f"The API is currently experiencing a high volume of traffic. Please wait a moment and click upload again."}
-
-        
-        # Clean the string if the model returns lingering code-blocks despite instructions
-        clean_text = response.text.strip().replace("```json", "").replace("```", "")
-        parsed_data = json.loads(clean_text)
-        return parsed_data
-        
-    except Exception as e:
-        return {"error": f"Cloud Token Processing Failed: {str(e)}"}
+                return {"error": "The API is currently experiencing a high volume of traffic. Please wait a moment and click upload again."}
